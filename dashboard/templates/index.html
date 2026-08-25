@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Proxy list</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: #070b10;
+      color: #e8eef6;
+    }
+    header {
+      padding: 28px 24px 12px;
+      background:
+        radial-gradient(700px 240px at 0% 0%, #14352f 0%, transparent 60%),
+        #0c1218;
+      border-bottom: 1px solid #1e2c36;
+    }
+    h1 { margin: 0; font-size: 26px; }
+    .sub { color: #8ea3b5; margin-top: 6px; }
+    .wrap { padding: 20px 24px 48px; max-width: 1180px; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin: 18px 0 22px; }
+    .stat {
+      background: #101820; border: 1px solid #24343f; border-radius: 12px; padding: 14px 16px;
+    }
+    .stat b { display: block; font-size: 20px; margin-top: 4px; color: #2ee6c7; }
+    .row-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    button, a.btn {
+      background: #152028; color: #dce8f0; border: 1px solid #334b5a; border-radius: 8px;
+      padding: 8px 12px; cursor: pointer; text-decoration: none; font-size: 13px;
+    }
+    button.primary { background: #2ee6c7; color: #04241e; border: 0; font-weight: 700; }
+    .table-wrap { overflow: auto; border: 1px solid #24343f; border-radius: 12px; }
+    table { width: 100%; border-collapse: collapse; min-width: 860px; }
+    th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid #1c2a33; font-size: 13px; }
+    th { color: #8ea3b5; font-weight: 600; background: #0f171e; }
+    code { font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
+    .pill {
+      display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700;
+      background: #123; color: #2ee6c7; margin-right: 4px;
+    }
+    .ok { color: #2ee6c7; } .bad { color: #ff8b8b; }
+    .copy { margin-left: 6px; padding: 3px 7px; font-size: 11px; }
+    pre {
+      background: #0f171e; border: 1px solid #24343f; border-radius: 12px;
+      padding: 14px; overflow: auto; font-size: 12px; line-height: 1.45;
+    }
+    h2 { margin: 28px 0 10px; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Your proxy list</h1>
+    <div class="sub">HTTP and SOCKS5 endpoints for Telegram Bot API and any app that accepts a proxy.</div>
+  </header>
+  <div class="wrap">
+    <div class="stats">
+      <div class="stat">Proxies<b id="count">—</b></div>
+      <div class="stat">HTTP port<b id="httpPort">—</b></div>
+      <div class="stat">SOCKS5 port<b id="socksPort">—</b></div>
+      <div class="stat">Telegram API<b id="tg">checking…</b></div>
+    </div>
+    <div class="row-actions">
+      <a class="btn" href="/download.txt">Download list</a>
+      <button type="button" id="refresh">Refresh status</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Proxy IP</th>
+            <th>HTTP port</th>
+            <th>SOCKS5 port</th>
+            <th>Username</th>
+            <th>Password</th>
+            <th>Country</th>
+            <th>Protocols</th>
+            <th>Connection string</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <h2>Telegram (node-telegram-bot-api)</h2>
+    <pre id="tgSnippet">Loading…</pre>
+    <h2>Generic HTTP / SOCKS5</h2>
+    <pre id="genericSnippet">Loading…</pre>
+  </div>
+  <script>
+    const copy = async (text) => {
+      await navigator.clipboard.writeText(text);
+    };
+    const render = (list) => {
+      const rows = document.getElementById("rows");
+      rows.innerHTML = "";
+      document.getElementById("count").textContent = String(list.length);
+      if (list[0]) {
+        document.getElementById("httpPort").textContent = list[0].http_port;
+        document.getElementById("socksPort").textContent = list[0].socks5_port;
+      }
+      list.forEach((p) => {
+        const http = `http://${p.username}:${p.password}@${p.proxy_address}:${p.http_port}`;
+        const socks = `socks5h://${p.username}:${p.password}@${p.proxy_address}:${p.socks5_port}`;
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><code>${p.proxy_address}</code></td>
+          <td>${p.http_port}</td>
+          <td>${p.socks5_port}</td>
+          <td><code>${p.username}</code></td>
+          <td><code>${p.password}</code> <button class="copy" data-copy="${p.password}">copy</button></td>
+          <td>${p.country_code || "—"}</td>
+          <td><span class="pill">HTTP</span><span class="pill">SOCKS5</span></td>
+          <td>
+            <div><code>${p.proxy_address}:${p.http_port}:${p.username}:${p.password}</code>
+            <button class="copy" data-copy="${p.proxy_address}:${p.http_port}:${p.username}:${p.password}">HTTP</button></div>
+            <div style="margin-top:6px"><code>${p.proxy_address}:${p.socks5_port}:${p.username}:${p.password}</code>
+            <button class="copy" data-copy="${p.proxy_address}:${p.socks5_port}:${p.username}:${p.password}">SOCKS5</button></div>
+          </td>`;
+        rows.appendChild(tr);
+      });
+      rows.querySelectorAll("[data-copy]").forEach((btn) => {
+        btn.addEventListener("click", () => copy(btn.getAttribute("data-copy")));
+      });
+      const first = list[0];
+      if (!first) return;
+      const http = `http://${first.username}:${first.password}@${first.proxy_address}:${first.http_port}`;
+      const socks = `socks5h://${first.username}:${first.password}@${first.proxy_address}:${first.socks5_port}`;
+      document.getElementById("tgSnippet").textContent =
+`const TelegramBot = require("node-telegram-bot-api");
+
+const bot = new TelegramBot(process.env.BOT_TOKEN, {
+  polling: true,
+  request: { proxy: "${http}" }
+});`;
+      document.getElementById("genericSnippet").textContent =
+`HTTP:   ${http}
+SOCKS5: ${socks}
+
+# curl test
+curl -x ${http} https://api.telegram.org/bot/getMe`;
+    };
+    const load = async () => {
+      const listRes = await fetch("/api/proxy/list");
+      const listJson = await listRes.json();
+      render(listJson.results || []);
+      const st = await fetch("/api/status").then((r) => r.json()).catch(() => ({ ok: false }));
+      const el = document.getElementById("tg");
+      el.textContent = st.ok ? `OK ${st.ms || ""}ms` : (st.error || "fail");
+      el.className = st.ok ? "ok" : "bad";
+    };
+    document.getElementById("refresh").addEventListener("click", load);
+    load();
+  </script>
+</body>
+</html>

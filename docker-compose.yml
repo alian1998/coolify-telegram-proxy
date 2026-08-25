@@ -1,0 +1,44 @@
+services:
+  proxy:
+    build: ./proxy
+    restart: unless-stopped
+    ports:
+      - "${HTTP_PUBLISH_PORT:-8080}:8080"
+      - "${SOCKS_PUBLISH_PORT:-1080}:1080"
+    environment:
+      PROXY_USERNAME: ${PROXY_USERNAME:-tgproxy}
+      PROXY_PASSWORD: ${PROXY_PASSWORD}
+      PROXY_USERS: ${PROXY_USERS:-}
+      HTTP_PORT: 8080
+      SOCKS_PORT: 1080
+      MAXCONN: ${MAXCONN:-200}
+    healthcheck:
+      test: ["CMD-SHELL", "pidof 3proxy >/dev/null"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  dashboard:
+    build: ./dashboard
+    restart: unless-stopped
+    ports:
+      - "${DASHBOARD_PUBLISH_PORT:-3000}:3000"
+    environment:
+      DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD}
+      SESSION_SECRET: ${SESSION_SECRET}
+      PROXY_USERNAME: ${PROXY_USERNAME:-tgproxy}
+      PROXY_PASSWORD: ${PROXY_PASSWORD}
+      PROXY_USERS: ${PROXY_USERS:-}
+      PROXY_PUBLIC_HOST: ${PROXY_PUBLIC_HOST:-88.222.213.240}
+      PROXY_HTTP_PORT: ${HTTP_PUBLISH_PORT:-8080}
+      PROXY_SOCKS_PORT: ${SOCKS_PUBLISH_PORT:-1080}
+      PROXY_COUNTRY: ${PROXY_COUNTRY:-}
+      INTERNAL_PROXY_HOST: proxy
+      INTERNAL_HTTP_PORT: "8080"
+    depends_on:
+      - proxy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:3000/health', timeout=4)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

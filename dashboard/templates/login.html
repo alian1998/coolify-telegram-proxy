@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Proxy panel login</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; display: grid; place-items: center;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: radial-gradient(1200px 600px at 20% -10%, #16332e 0%, transparent 50%),
+                  radial-gradient(900px 500px at 100% 100%, #1a2744 0%, transparent 45%),
+                  #070b10;
+      color: #e8eef6;
+    }
+    form {
+      width: min(420px, calc(100vw - 32px));
+      background: #101820ee;
+      border: 1px solid #2a3b48;
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 20px 50px #0008;
+    }
+    h1 { margin: 0 0 6px; font-size: 22px; }
+    p { margin: 0 0 20px; color: #93a4b5; font-size: 14px; }
+    label { display: block; font-size: 12px; letter-spacing: .04em; color: #9bb; margin-bottom: 8px; }
+    input {
+      width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid #345;
+      background: #0b1218; color: #fff; font-size: 15px; margin-bottom: 16px;
+    }
+    button {
+      width: 100%; padding: 12px; border: 0; border-radius: 10px; cursor: pointer;
+      background: #2ee6c7; color: #04241e; font-weight: 700; font-size: 15px;
+    }
+    .err { color: #ff8b8b; min-height: 1.2em; margin: 0 0 12px; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <form method="post" action="/login">
+    <h1>Proxy panel</h1>
+    <p>HTTP + SOCKS5 list for Telegram bots</p>
+    <div class="err">{{error}}</div>
+    <label for="password">DASHBOARD PASSWORD</label>
+    <input id="password" name="password" type="password" autocomplete="current-password" required />
+    <button type="submit">Open proxy list</button>
+  </form>
+</body>
+</html>
