@@ -55,10 +55,11 @@
 <body>
   <header>
     <h1>Your proxy list</h1>
-    <div class="sub">HTTP and SOCKS5 endpoints for Telegram Bot API and any app that accepts a proxy.</div>
+    <div class="sub">Mask client IP behind your VPS. All Telegram API traffic exits as one stable IP.</div>
   </header>
   <div class="wrap">
     <div class="stats">
+      <div class="stat">Masked IP<b id="maskedIp">—</b></div>
       <div class="stat">Proxies<b id="count">—</b></div>
       <div class="stat">HTTP port<b id="httpPort">—</b></div>
       <div class="stat">SOCKS5 port<b id="socksPort">—</b></div>
@@ -99,6 +100,7 @@
       rows.innerHTML = "";
       document.getElementById("count").textContent = String(list.length);
       if (list[0]) {
+        document.getElementById("maskedIp").textContent = list[0].proxy_address;
         document.getElementById("httpPort").textContent = list[0].http_port;
         document.getElementById("socksPort").textContent = list[0].socks5_port;
       }

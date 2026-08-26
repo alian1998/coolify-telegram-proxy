@@ -1,35 +1,66 @@
 # coolify-telegram-proxy
 
-Webshare-style **HTTP + SOCKS5** proxy stack for Coolify. One VPS IP, username/password auth, a private list UI, and Telegram Bot API connectivity.
+Webshare-style **HTTP + SOCKS5** proxy stack for Coolify. One **your VPS IP**, username/password auth, a private list UI, and Telegram Bot API connectivity.
 
-This is **your** proxy on `88.222.213.240`, not Webshare’s IP pool. One machine = one exit IP. That is enough for Telegram bots.
+## IP masking (your VPS)
+
+Bot er real IP (PC, mobile, office) hide hoye **ekta stable VPS IP** diye `api.telegram.org` e request jay.
+
+```text
+Bot (any network) → your proxy (88.222.213.240:18080) → api.telegram.org
+                         ↑
+                   Telegram ekhane shudhu ei IP dekhe
+```
+
+- **No extra Webshare/Singapore proxy needed** — upstream optional.
+- Same IP for all bots = consistent, less random blocking.
+- `Getway-support-autoworker` already supports `TELEGRAM_HTTP_PROXY` env.
+
+Bot app (Coolify) e add koro:
+
+```env
+TELEGRAM_HTTP_PROXY=http://tgproxy:YOUR_PROXY_PASS@88.222.213.240:18080
+```
+
+Template: `examples/support-bot.env`
 
 ## What you get
 
-| Protocol | Default port | Example |
+| Protocol | Coolify port | Example |
 | --- | --- | --- |
-| HTTP (CONNECT / HTTPS) | `8080` | `http://tgproxy:PASS@88.222.213.240:8080` |
+| HTTP (CONNECT / HTTPS) | `18080` | `http://tgproxy:PASS@88.222.213.240:18080` |
 | SOCKS5 | `1080` | `socks5h://tgproxy:PASS@88.222.213.240:1080` |
 | Dashboard | `3000` | login with `DASHBOARD_PASSWORD` |
 
-List format (same idea as Webshare download):
+List format (Webshare-style download):
 
 ```text
-88.222.213.240:8080:tgproxy:YOUR_PASS
+88.222.213.240:18080:tgproxy:YOUR_PASS
 88.222.213.240:1080:tgproxy:YOUR_PASS
 ```
 
 ## Coolify deploy
 
 1. Copy `.env.example` → set strong `PROXY_PASSWORD`, `DASHBOARD_PASSWORD`, `SESSION_SECRET`.
-2. In Coolify: **New Resource → Docker Compose**.
-3. Point it at this repo (or paste `docker-compose.yml` + the `proxy/` and `dashboard/` folders).
-4. Load the same env vars in Coolify.
-5. Publish ports **8080** and **1080** on the VPS. Dashboard `3000` can stay behind a Coolify domain.
-6. On the VPS firewall (UFW/security group): allow `8080/tcp` and `1080/tcp`.
-7. Open the dashboard, confirm **Telegram API = OK**, copy the connection string into your bot.
+2. In Coolify: **New Resource → Docker Compose** → this repo, branch `master`.
+3. Set env vars (especially `HTTP_PUBLISH_PORT=18080` if `8080` is taken).
+4. Publish ports **18080** and **1080** on the VPS. Dashboard **3000**.
+5. VPS firewall: allow `18080/tcp`, `1080/tcp`, `3000/tcp`.
+6. Open dashboard → **Telegram API = OK** → copy proxy URL into bot env → redeploy bot.
 
-Do not expose 8080/1080 without the proxy username/password. Do not leave dashboard password empty.
+Do not expose proxy ports without username/password. Do not leave dashboard password empty.
+
+## Optional foreign exit (upstream)
+
+Only if India datacenter IP is still blocked. Leave `UPSTREAM_PROXY_HOST` empty to use **your VPS IP only**.
+
+```env
+UPSTREAM_PROXY_TYPE=http
+UPSTREAM_PROXY_HOST=p.webshare.io
+UPSTREAM_PROXY_PORT=80
+UPSTREAM_PROXY_USERNAME=your-user
+UPSTREAM_PROXY_PASSWORD=your-pass
+```
 
 ## Telegram bot (`node-telegram-bot-api`)
 
@@ -38,7 +69,7 @@ HTTP proxy (simplest):
 ```js
 const bot = new TelegramBot(process.env.BOT_TOKEN, {
   polling: true,
-  request: { proxy: "http://tgproxy:YOUR_PASS@88.222.213.240:8080" },
+  request: { proxy: "http://tgproxy:YOUR_PASS@88.222.213.240:18080" },
 });
 ```
 

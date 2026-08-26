@@ -66,22 +66,47 @@ if [ -z "$USERS_LINE" ]; then
   exit 1
 fi
 
+PARENT_BLOCK=""
+if [ -n "${UPSTREAM_PROXY_HOST:-}" ]; then
+  if [ -z "${UPSTREAM_PROXY_PORT:-}" ]; then
+    echo "UPSTREAM_PROXY_PORT is required when UPSTREAM_PROXY_HOST is set." >&2
+    exit 1
+  fi
+  UPSTREAM_TYPE="${UPSTREAM_PROXY_TYPE:-http}"
+  case "$UPSTREAM_TYPE" in
+    http|connect|socks4|socks5|tcp) ;;
+    *)
+      echo "Invalid UPSTREAM_PROXY_TYPE '${UPSTREAM_TYPE}'. Use http, connect, socks4, socks5, or tcp." >&2
+      exit 1
+      ;;
+  esac
+  if [ -n "${UPSTREAM_PROXY_USERNAME:-}" ]; then
+    PARENT_BLOCK="parent 1000 ${UPSTREAM_TYPE} ${UPSTREAM_PROXY_HOST} ${UPSTREAM_PROXY_PORT} ${UPSTREAM_PROXY_USERNAME} ${UPSTREAM_PROXY_PASSWORD:-}"
+  else
+    PARENT_BLOCK="parent 1000 ${UPSTREAM_TYPE} ${UPSTREAM_PROXY_HOST} ${UPSTREAM_PROXY_PORT}"
+  fi
+  echo "Upstream parent enabled: ${UPSTREAM_TYPE}://${UPSTREAM_PROXY_HOST}:${UPSTREAM_PROXY_PORT}"
+fi
+
 CFG="/tmp/3proxy.cfg"
-cat > "$CFG" <<EOF
-nscache 65536
-nserver 1.1.1.1
-nserver 8.8.8.8
-nserver 9.9.9.9
-timeouts 1 5 30 60 180 1800 15 60
-log /dev/stdout D
-logformat "- %U %C:%c %R:%r %O %I %T"
-maxconn ${MAXCONN}
-auth strong
-users ${USERS_LINE}
-allow *
-proxy -n -a -p${HTTP_PORT} -i0.0.0.0
-socks -p${SOCKS_PORT} -i0.0.0.0
-EOF
+{
+  echo "nscache 65536"
+  echo "nserver 1.1.1.1"
+  echo "nserver 8.8.8.8"
+  echo "nserver 9.9.9.9"
+  echo "timeouts 1 5 30 60 180 1800 15 60"
+  echo "log /dev/stdout D"
+  echo "logformat \"- %U %C:%c %R:%r %O %I %T\""
+  echo "maxconn ${MAXCONN}"
+  echo "auth strong"
+  echo "users ${USERS_LINE}"
+  echo "allow *"
+  if [ -n "$PARENT_BLOCK" ]; then
+    echo "$PARENT_BLOCK"
+  fi
+  echo "proxy -n -a -p${HTTP_PORT} -i0.0.0.0"
+  echo "socks -p${SOCKS_PORT} -i0.0.0.0"
+} > "$CFG"
 
 echo "3proxy starting HTTP :${HTTP_PORT} SOCKS5 :${SOCKS_PORT} user=${FIRST_USER}"
 exec 3proxy "$CFG"

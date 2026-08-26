@@ -2,7 +2,7 @@
  * Example: connect node-telegram-bot-api through this stack's HTTP proxy.
  *
  *   npm i node-telegram-bot-api
- *   BOT_TOKEN=123:abc HTTP_PROXY=http://tgproxy:PASS@VPS_IP:8080 node examples/telegram-bot.js
+ *   BOT_TOKEN=123:abc HTTP_PROXY=http://tgproxy:PASS@88.222.213.240:18080 node examples/telegram-bot.js
  */
 
 const TelegramBot = require("node-telegram-bot-api");
