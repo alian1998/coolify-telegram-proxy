@@ -95,7 +95,9 @@ CFG="/tmp/3proxy.cfg"
   echo "nserver 8.8.8.8"
   echo "nserver 9.9.9.9"
   echo "timeouts 1 5 30 60 180 1800 15 60"
-  echo "log /dev/stdout D"
+  # Do not use rotation type (D/W/H) with /dev/stdout — 3proxy appends
+  # a date suffix (e.g. /dev/stdout.2026.08.30) and crashes as non-root.
+  echo "log"
   echo "logformat \"- %U %C:%c %R:%r %O %I %T\""
   echo "maxconn ${MAXCONN}"
   echo "auth strong"
